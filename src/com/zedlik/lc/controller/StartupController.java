@@ -11,13 +11,16 @@ import java.awt.Toolkit;
 import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
+import javax.swing.WindowConstants;
 
 import com.zedlik.lc.convert.ConvertRule;
 import com.zedlik.lc.localization.IMessages;
@@ -31,39 +34,63 @@ public class StartupController {
 	
 	private static final String RULES_FILE_PATH = "rules.properties";
 	private static final String ENCODING_BOM = "\uFEFF";
+	private static final String LOCAL_PATH_PREFIX = "/";
+	private static final String FILE_CHARSET = "UTF8";
 	
 	private StartupController() {
 		// Hiding the constructor
 	}
-
+	
 	/**
-	 * Main routine starting the application.
-	 * @param messages Class providing localisation of messages
+	 * Performs startup initialisation.
+	 * 
+	 * @return True if initialisation succeeded, false otherwise
 	 */
-	public static void start(final IMessages messages) {
-		// Setting the UI
-		setLookAndFeel();
+	public static boolean init(final IMessages messages) {
 		
 		// Load the conversion rules
 		List<ConvertRule> ruleList = loadRules(messages);
 		if (ruleList != null) {
 			RuleListController.getInstance().setRules(ruleList);
 			
-			// Creating the UI
-			SwingUtilities.invokeLater(new Runnable() {
-				public void run() {
-					MainFrame frame = new MainFrame(messages);
-					
-					List<Image> icons = new ArrayList<Image>();
-					icons.add(Toolkit.getDefaultToolkit().getImage("resources/32.png"));
-					icons.add(Toolkit.getDefaultToolkit().getImage("resources/48.png"));
-					icons.add(Toolkit.getDefaultToolkit().getImage("resources/16.png"));
-					frame.setIconImages(icons);
-
-					frame.setVisible(true);
-				}
-			});
+			// Setting the UI
+			setLookAndFeel();
+			
+			return true;
 		}
+		
+		return false;
+	}
+	
+	/**
+	 * Creates the main frame of the application.
+	 * 
+	 * @return Application main frame
+	 */
+	public static JFrame createMainFrame(final IMessages messages) {
+		JFrame frame = new MainFrame(messages);
+		return frame;
+	}
+	
+	/**
+	 * Main routine starting the application.
+	 * @param messages Class providing localisation of messages
+	 */
+	public static void start(final IMessages messages) {
+		SwingUtilities.invokeLater(new Runnable() {
+			public void run() {
+				JFrame frame = createMainFrame(messages);
+				frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+				
+				List<Image> icons = new ArrayList<Image>();
+				icons.add(Toolkit.getDefaultToolkit().getImage("resources/32.png"));
+				icons.add(Toolkit.getDefaultToolkit().getImage("resources/48.png"));
+				icons.add(Toolkit.getDefaultToolkit().getImage("resources/16.png"));
+				frame.setIconImages(icons);
+
+				frame.setVisible(true);
+			}
+		});
 	}
 	
 	/**
@@ -97,7 +124,14 @@ public class StartupController {
 	 * Reads conversion rules from a file on disk.
 	 */
 	private static String readRules(IMessages messages) {
-
+		
+		// First, trying to get rules from the local file
+		String resourceRules = readResource(LOCAL_PATH_PREFIX + RULES_FILE_PATH);
+		if (resourceRules != null) {
+			return resourceRules;
+		}
+		
+		// Now, trying to load rules from file on disk
 		try {
 			String rules = readFile(RULES_FILE_PATH);
 			return rules;
@@ -174,7 +208,7 @@ public class StartupController {
 	 */
 	private static String readFile(String filePath) throws IOException {
         StringBuffer buffer = new StringBuffer();
-        BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(filePath), "UTF8"));
+        BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(filePath), FILE_CHARSET));
         char[] buf = new char[2048];
         int numRead = 0;
         while ((numRead = reader.read(buf)) != -1) {
@@ -185,5 +219,33 @@ public class StartupController {
         reader.close();
         return buffer.toString();
     }
+	
+	/**
+	 * Reads local resource and returns it as a string.
+	 * 
+	 * @param path Path to the resource
+	 * @return Resource content
+	 */
+	private static String readResource(String path) {
+		InputStream is = StartupController.class.getResourceAsStream(path);
+		if (is == null) {
+			return null;
+		}
+		
+		java.util.Scanner s = new java.util.Scanner(is, FILE_CHARSET).useDelimiter("\\A");
+		String content = "";
+		if (s.hasNext()) {
+			content = s.next();
+		}
+		
+		try {
+			is.close();
+		}
+		catch (IOException e) {
+			// Ignore
+		}
+		
+		return content;
+	}
 
 }

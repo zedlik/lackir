@@ -20,6 +20,8 @@ public class LacKir {
 	
 	public static void main(String[] args) {
 		IMessages messages = new MessagesBe();
-		StartupController.start(messages);
+		if (StartupController.init(messages)) {
+			StartupController.start(messages);
+		}
 	}
 }
