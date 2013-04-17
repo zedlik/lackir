@@ -22,5 +22,4 @@ public class LacKir {
 		IMessages messages = new MessagesBe();
 		StartupController.start(messages);
 	}
-
 }
