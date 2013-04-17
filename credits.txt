@@ -3,7 +3,7 @@
 Рэалізацыя і праграмаваньне: zedlik, jz53x <at> zedlik.com
 Лінгвістычныя правілы: Віталь Станішэўскі, vit.stan <at> gmail.com
 
-https://github.com/zedlik/lac-kir
+https://github.com/zedlik/lackir
 
 ***
 Ліцэнзія

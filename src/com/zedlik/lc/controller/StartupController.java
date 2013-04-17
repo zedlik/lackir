@@ -48,14 +48,13 @@ public class StartupController {
 	 */
 	public static boolean init(final IMessages messages) {
 		
+		// Setting the UI
+		setLookAndFeel();
+
 		// Load the conversion rules
 		List<ConvertRule> ruleList = loadRules(messages);
 		if (ruleList != null) {
 			RuleListController.getInstance().setRules(ruleList);
-			
-			// Setting the UI
-			setLookAndFeel();
-			
 			return true;
 		}
 		
@@ -81,11 +80,29 @@ public class StartupController {
 			public void run() {
 				JFrame frame = createMainFrame(messages);
 				frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+
+				// Setting up the icon list
+				List<String> iconPaths = new ArrayList<String>() {{
+					add("resources/48.png");
+					add("resources/32.png");
+					add("resources/16.png");
+				}}; 
 				
 				List<Image> icons = new ArrayList<Image>();
-				icons.add(Toolkit.getDefaultToolkit().getImage("resources/32.png"));
-				icons.add(Toolkit.getDefaultToolkit().getImage("resources/48.png"));
-				icons.add(Toolkit.getDefaultToolkit().getImage("resources/16.png"));
+				
+				InputStream is = StartupController.class.getResourceAsStream(LOCAL_PATH_PREFIX + iconPaths.get(0));
+				if (is == null) {
+					// Icons available in local folder on disk
+					for (String path : iconPaths) {
+						icons.add(Toolkit.getDefaultToolkit().getImage(path));
+					}
+				}
+				else {
+					// Icons available as resource packed in a jar file
+					for (String path : iconPaths) {
+						icons.add(Toolkit.getDefaultToolkit().getImage(StartupController.class.getResource(LOCAL_PATH_PREFIX + path)));
+					}
+				}
 				frame.setIconImages(icons);
 
 				frame.setVisible(true);
